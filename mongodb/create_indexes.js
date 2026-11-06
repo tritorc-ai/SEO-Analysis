@@ -1,0 +1,20 @@
+// Run with mongosh against the connection string. The database name comes from the DB_NAME env var (default tritorc_seo).
+const dbName = (typeof process !== 'undefined' && process.env.DB_NAME) ? process.env.DB_NAME : 'tritorc_seo';
+const d = db.getSiblingDB(dbName);
+d.sites.createIndex({ siteId: 1 }, { unique: true });
+d.pages.createIndex({ siteId: 1, path: 1 }, { unique: true });
+d.pages.createIndex({ siteId: 1, group: 1 });
+d.ga4_daily.createIndex({ siteId: 1, date: 1 }, { unique: true });
+d.gsc_daily.createIndex({ siteId: 1, date: 1 }, { unique: true });
+d.page_metrics.createIndex({ siteId: 1, path: 1, source: 1, windowEnd: 1 }, { unique: true });
+d.queries.createIndex({ siteId: 1, windowEnd: 1, query: 1, path: 1 }, { unique: true });
+d.lighthouse_runs.createIndex({ siteId: 1, path: 1, strategy: 1, runAt: -1 });
+d.cwv_field.createIndex({ siteId: 1, scope: 1, path: 1, formFactor: 1, fetchedAt: -1 });
+d.audit_runs.createIndex({ siteId: 1, runId: 1 }, { unique: true });
+d.page_audits.createIndex({ siteId: 1, runId: 1, path: 1 }, { unique: true });
+d.issues.createIndex({ siteId: 1, issueKey: 1 }, { unique: true });
+d.issues.createIndex({ siteId: 1, status: 1, severity: 1 });
+d.audience_snapshots.createIndex({ siteId: 1, windowEnd: 1 });
+d.ga4_event_catalog.createIndex({ siteId: 1, pulledAt: -1 });
+d.sync_log.createIndex({ siteId: 1, source: 1, finishedAt: -1 });
+print('indexes created in ' + dbName);
