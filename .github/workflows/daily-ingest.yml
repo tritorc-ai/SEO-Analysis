@@ -1,0 +1,41 @@
+name: Daily data refresh
+
+# Pulls GA4, Search Console, PageSpeed, CrUX, real-user vitals, paid ads and uptime into MongoDB Atlas.
+# Runs in GitHub's cloud, so it works when your PC is off. Secrets: Settings > Secrets and variables > Actions.
+on:
+  schedule:
+    - cron: "0 1 * * *"      # 01:00 UTC = 06:30 IST
+  workflow_dispatch:         # "Run workflow" button for a manual refresh
+
+concurrency: ingest
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Run all ingest jobs
+        run: node src/ingest.js all
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB: tritorc_seo
+          SITE_ID: tritorc
+          SITE_URL: https://www.tritorc.com
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          GSC_PROPERTY: ${{ secrets.GSC_PROPERTY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNTS: ${{ secrets.META_AD_ACCOUNTS }}
+          GOOGLE_ADS_SHEET_ID: ${{ secrets.GOOGLE_ADS_SHEET_ID }}
+          UPTIMEROBOT_API_KEY: ${{ secrets.UPTIMEROBOT_API_KEY }}
