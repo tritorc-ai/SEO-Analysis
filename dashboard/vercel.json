@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/", "destination": "/api/gate?r=page" },
+    { "source": "/api/state", "destination": "/api/gate?r=state" },
+    { "source": "/api/paid/feed", "destination": "/api/gate?r=feed" }
+  ],
+  "functions": {
+    "api/gate.js": { "maxDuration": 60, "includeFiles": "TRITORC_Website_SEO_Dashboard.html" }
+  },
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "no-referrer" }
+    ] }
+  ]
+}

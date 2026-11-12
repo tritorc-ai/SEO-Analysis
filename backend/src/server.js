@@ -13,7 +13,7 @@ async function state() {
 }
 
 const server = http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Private-Network', 'true');
@@ -23,6 +23,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/health') {
       const db = await getDb(); await db.command({ ping: 1 });
       res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, db: cfg.dbName, time: new Date().toISOString() }));
+    }
+    // When API_TOKEN is set (hosted deployment) every data route needs "Authorization: Bearer <token>". /api/health stays open.
+    if (cfg.apiToken && url.pathname.startsWith('/api/') && url.pathname !== '/api/health' && req.headers.authorization !== 'Bearer ' + cfg.apiToken) {
+      res.writeHead(401, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: 'unauthorized' }));
     }
     if (req.method === 'GET' && url.pathname === '/api/state') {
       if (url.searchParams.get('fresh') === '1') cache = null;
@@ -41,4 +45,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(500, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'server error' }));
   }
 });
-server.listen(cfg.port, '127.0.0.1', () => log(`TRITORC backend listening on http://127.0.0.1:${cfg.port}  (db: ${cfg.dbName})`));
+// Local: 127.0.0.1 only. Hosted (HOST=0.0.0.0, PORT set by Render): all interfaces, and API_TOKEN is then mandatory.
+const host = process.env.HOST || '127.0.0.1';
+if (host !== '127.0.0.1' && host !== 'localhost' && !cfg.apiToken) { console.error('Refusing to listen on ' + host + ' without API_TOKEN set.'); process.exit(1); }
+server.listen(cfg.port, host, () => log(`TRITORC backend listening on http://${host}:${cfg.port}  (db: ${cfg.dbName})`));

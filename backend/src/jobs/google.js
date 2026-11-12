@@ -4,9 +4,9 @@ import { cfg } from '../config.js';
 
 let auth;
 async function token() {
-  if (!cfg.saFile) throw new Error('GOOGLE_SERVICE_ACCOUNT_FILE is not set in .env (see SETUP_GOOGLE.md)');
+  if (!cfg.saFile && !cfg.saJson) throw new Error('GOOGLE_SERVICE_ACCOUNT_FILE (or GOOGLE_SERVICE_ACCOUNT_JSON) is not set (see SETUP_GOOGLE.md)');
   auth ||= new GoogleAuth({
-    keyFile: cfg.saFile,
+    ...(cfg.saJson ? { credentials: JSON.parse(cfg.saJson) } : { keyFile: cfg.saFile }),
     scopes: ['https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/webmasters.readonly', 'https://www.googleapis.com/auth/spreadsheets.readonly']
   });
   const c = await auth.getClient();

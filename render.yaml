@@ -1,0 +1,19 @@
+# Render Blueprint: the backend API. Secrets are marked sync:false, so Render asks you for them in its dashboard (they are never stored in git).
+services:
+  - type: web
+    name: tritorc-seo-api
+    runtime: node
+    rootDir: backend
+    plan: free              # sleeps after 15 min idle (first load ~30-50 s). Use "starter" ($7/mo) to keep it awake.
+    buildCommand: npm ci
+    startCommand: node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - { key: NODE_VERSION, value: "22" }
+      - { key: HOST, value: 0.0.0.0 }
+      - { key: MONGODB_DB, value: tritorc_seo }
+      - { key: SITE_ID, value: tritorc }
+      - { key: SITE_URL, value: "https://www.tritorc.com" }
+      - { key: MONGODB_URI, sync: false }
+      - { key: API_TOKEN, sync: false }          # long random string; the same value goes into Vercel and nowhere else
+      - { key: PAID_FEED_TOKEN, sync: false }    # optional

@@ -1,15 +1,19 @@
-{
-  "name": "tritorc-seo-backend",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "description": "Backend for the TRITORC SEO dashboard: ingests data into MongoDB Atlas and serves it to the dashboard.",
-  "scripts": {
-    "start": "node --env-file=.env src/server.js",
-    "ingest": "node --env-file=.env src/ingest.js"
-  },
-  "dependencies": {
-    "google-auth-library": "^11.3.3",
-    "mongodb": "^7.8.0"
-  }
+﻿{
+    "name":  "tritorc-seo-backend",
+    "version":  "1.0.0",
+    "private":  true,
+    "type":  "module",
+    "description":  "Backend for the TRITORC SEO dashboard: ingests data into MongoDB Atlas and serves it to the dashboard.",
+    "scripts":  {
+                    "start":  "node --env-file=.env src/server.js",
+                    "ingest":  "node --env-file=.env src/ingest.js",
+                    "start:hosted":  "node src/server.js"
+                },
+    "dependencies":  {
+                         "google-auth-library":  "^11.3.3",
+                         "mongodb":  "^7.8.0"
+                     },
+    "engines":  {
+                    "node":  "\u003e=22"
+                }
 }

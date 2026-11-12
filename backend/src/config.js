@@ -8,6 +8,8 @@ export const cfg = {
   ga4Property: e.GA4_PROPERTY_ID,
   gscProperty: e.GSC_PROPERTY,
   saFile: e.GOOGLE_SERVICE_ACCOUNT_FILE,
+  saJson: e.GOOGLE_SERVICE_ACCOUNT_JSON,   // hosted: the whole key file pasted into one env var
+  apiToken: e.API_TOKEN,
   apiKey: e.GOOGLE_API_KEY,
   port: Number(e.PORT || 8790),
   cruxMinSessions: Number(e.CRUX_MIN_SESSIONS || 300),
