@@ -12,7 +12,11 @@ paths are case-sensitive; every collection has a natural unique key so loads can
 | `page_metrics` | page, source (`ga4` or `gsc`) and 28-day window | `siteId, path, source, windowEnd` |
 | `queries` | query, page and window | `siteId, windowEnd, query, path` |
 | `lighthouse_runs` | page, device and run (history kept) | `siteId, path, strategy, runAt desc` |
-| `cwv_field` | scope (`origin` or `url`), device and fetch | `siteId, scope, path, formFactor, fetchedAt desc` |
+| `cwv_field` | scope (`origin` or `url`), device and fetch; `source: "rum"` rows are our own real-user readings (preferred over CrUX) | `siteId, scope, path, formFactor, fetchedAt desc` |
+| `paid_rows` | ad platform (`google`, `linkedin`, `meta`), account, campaign (or ad set) and day | `siteId, date, platform, account, cid` (unique) |
+| `paid_funds` | recorded top-up (optional) | `siteId, platform, date` |
+| `uptime_daily` | UptimeRobot monitor and complete day | `siteId, monitorId, date` (unique) |
+| `uptime_monitors` | monitor, plus one `tls-<host>` row with the site's SSL expiry read directly | `siteId, monitorId` |
 | `audit_runs` | crawl | `siteId, runId` |
 | `page_audits` | page and crawl | `siteId, runId, path` |
 | `issues` | issue | `siteId, issueKey`; also `siteId, status, severity` |
@@ -40,6 +44,18 @@ paths are case-sensitive; every collection has a natural unique key so loads can
 ```json
 { "siteId": "tritorc", "path": "/careers", "strategy": "mobile", "runAt": { "$date": "2026-11-06T09:08:33Z" },
   "performance": 69, "seo": 92 }
+```
+
+`paid_rows` (amounts stay in each account's own currency; nothing is converted in the database)
+```json
+{ "siteId": "tritorc", "date": { "$date": "2026-11-05T00:00:00Z" }, "platform": "meta", "account": "Tritorc Group · act_933966175668454",
+  "cid": "120200000000000001", "campaign": "Hydraulic-torque-wrench", "type": "OUTCOME_LEADS", "currency": "INR",
+  "impressions": 40123, "clicks": 2650, "spend": 1840.5, "reach": 31100, "landing_page_views": 410, "conversions": 5, "lead_form_submissions": 0 }
+```
+
+`uptime_daily`
+```json
+{ "siteId": "tritorc", "monitorId": "804645429", "name": "www.tritorc.com/", "date": { "$date": "2026-11-13T00:00:00Z" }, "uptimePct": 100, "avgResponseMs": 145 }
 ```
 
 `issues`

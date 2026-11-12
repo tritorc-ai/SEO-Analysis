@@ -6,10 +6,10 @@ Website performance and SEO dashboard for tritorc.com, with a MongoDB Atlas data
 
 | Folder | What it is |
 |---|---|
-| `dashboard/` | Single-file HTML dashboard (traffic, search, Core Web Vitals, on-page audit, issue log, page explorer). Loads its data from the backend API; falls back to its own browser cache when the backend is offline. |
+| `dashboard/` | Single-file HTML dashboard (traffic, search, Core Web Vitals, on-page audit, issue log, page explorer, paid advertising). Charts have date ranges, day-to-year grouping and hover values; Core Web Vitals, SEO and the page explorer filter by subdirectory, country and traffic source. Loads its data from the backend API; falls back to its own browser cache when the backend is offline. |
 | `crawler/` | PowerShell on-page crawler. Scores each page 0-1 on crawl, meta, content, links, schema and other, and produces an issue log. |
 | `mongodb/` | PowerShell scripts that convert data to MongoDB import files, create indexes and load into Atlas; the daily crawl refresh. |
-| `backend/` | Node.js backend: read-only API for the dashboard and daily ingest jobs for GA4, Search Console, PageSpeed and CrUX. |
+| `backend/` | Node.js backend: read-only API for the dashboard and daily ingest jobs for GA4, Search Console, PageSpeed, CrUX, real-user Core Web Vitals, paid advertising (Meta, Google Ads, LinkedIn), UptimeRobot and the SSL certificate. Also holds `gtm/` (web-vitals tag), `google-ads-script/` (daily export to a Sheet) and `tools/` (LinkedIn export converter, paid CSV import). |
 | `tools/` | Background saver that writes the dashboard's browser data to a local JSON file. |
 | `docs/` | MongoDB schema. |
 
@@ -17,6 +17,9 @@ Website performance and SEO dashboard for tritorc.com, with a MongoDB Atlas data
 
 ```
 Google (GA4, Search Console, PageSpeed, CrUX) --> backend ingest jobs --> MongoDB Atlas --> backend API --> dashboard
+Visitors' browsers (web-vitals tag in GTM) --> GA4 events --> backend job --> real-user Core Web Vitals
+Meta, Google Ads (through a Sheet), LinkedIn (CSV export) --> paid_rows --> /api/paid/feed --> Paid advertising page
+UptimeRobot + the site's TLS certificate --> uptime_daily / uptime_monitors --> uptime and SSL alerts
 tritorc.com --> crawler --> MongoDB Atlas (audit scores and issues)
 ```
 
