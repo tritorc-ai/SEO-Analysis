@@ -1,0 +1,21 @@
+<!-- GTM > Tags > New > Custom HTML. Trigger: All Pages. Paste everything below (including the script tags). -->
+<script>
+(function () {
+  if (window.__tritorcCwv) return; window.__tritorcCwv = true;
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/web-vitals@4.2.4/dist/web-vitals.iife.js';   // Google's open-source web-vitals library, pinned version
+  s.async = true;
+  s.onload = function () {
+    function send(m) {
+      // Round into small steps so GA4 can group readings: LCP 100 ms, INP 25 ms, CLS x100 (0.01 steps)
+      var v = m.name === 'CLS' ? Math.min(100, Math.round(m.value * 100))
+            : m.name === 'LCP' ? Math.min(10000, Math.round(m.value / 100) * 100)
+            : Math.min(2000, Math.round(m.value / 25) * 25);
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: 'web_vitals', cwv_event: 'cwv_' + m.name.toLowerCase(), cwv_bucket: v, cwv_rating: m.rating });
+    }
+    webVitals.onLCP(send); webVitals.onINP(send); webVitals.onCLS(send);
+  };
+  document.head.appendChild(s);
+})();
+</script>
