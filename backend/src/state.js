@@ -10,11 +10,12 @@ const latestBy = (arr, keyFn, dateFn) => {
 
 export async function buildState(db) {
   const siteId = cfg.siteId, col = (n) => db.collection(n).find({ siteId });
-  const [pages, ga4d, gscd, pm, qs, lh, cw, audits, issues, aud, syncs, site] = await Promise.all([
+  const [pages, ga4d, gscd, pm, qs, lh, cw, audits, issues, aud, syncs, site, upd, upm] = await Promise.all([
     col('pages').toArray(), col('ga4_daily').sort({ date: 1 }).toArray(), col('gsc_daily').sort({ date: 1 }).toArray(),
     col('page_metrics').toArray(), col('queries').toArray(), col('lighthouse_runs').toArray(), col('cwv_field').toArray(),
     col('page_audits').toArray(), col('issues').toArray(), col('audience_snapshots').sort({ windowEnd: -1 }).limit(1).toArray(),
-    col('sync_log').toArray(), db.collection('sites').findOne({ siteId })
+    col('sync_log').toArray(), db.collection('sites').findOne({ siteId }),
+    col('uptime_daily').toArray(), col('uptime_monitors').toArray()
   ]);
 
   // daily
@@ -30,6 +31,10 @@ export async function buildState(db) {
     if (e.phone_click != null) o.ph = e.phone_click;
   }
   for (const r of gscd) { const o = (daily[iso(r.date)] = daily[iso(r.date)] || {}); Object.assign(o, { clicks: r.clicks, impr: r.impressions, posSum: r.positionSum }); }
+  // uptime from UptimeRobot: the dashboard's uptime is upOk / upN, so a day's average uptime % is sent as upOk with upN = 100
+  const upDay = {}; for (const r of upd) (upDay[iso(r.date)] ||= []).push(r.uptimePct);
+  for (const [k, v] of Object.entries(upDay)) { const o = (daily[k] = daily[k] || {}); o.upOk = Math.round(v.reduce((a, b) => a + b, 0) / v.length * 1000) / 1000; o.upN = 100; }
+  const sslDates = upm.map((m) => m.sslExpires).filter(Boolean).sort(), ssl = sslDates[0] || null;      // soonest certificate expiry
 
   // per-page lookups
   const pmLatest = (src) => latestBy(pm.filter((x) => x.source === src), (x) => x.path, (x) => +new Date(x.windowEnd));
@@ -37,8 +42,10 @@ export async function buildState(db) {
   const gscAll = new Map(), gaAll = new Map(); // all windows per path, for the previous-period comparison
   for (const x of pm) { const mp = x.source === 'gsc' ? gscAll : x.source === 'ga4' ? gaAll : null; if (!mp) continue; const a = mp.get(x.path) || []; a.push(x); mp.set(x.path, a); }
   const lhM = latestBy(lh, (x) => x.path + '|' + x.strategy, (x) => +new Date(x.runAt));
-  const urlCw = latestBy(cw.filter((x) => x.scope === 'url'), (x) => x.path + '|' + x.formFactor, (x) => +new Date(x.fetchedAt));
-  const originCw = latestBy(cw.filter((x) => x.scope === 'origin'), (x) => x.formFactor, (x) => +new Date(x.fetchedAt));
+  // Field data: our own real-user readings (source "rum") win over Google's CrUX when both exist.
+  const pick = (scope, keyFn) => { const f = (src) => latestBy(cw.filter((x) => x.scope === scope && (x.source === 'rum') === src), keyFn, (x) => +new Date(x.fetchedAt)); const m = f(false); for (const [k, v] of f(true)) m.set(k, v); return m; };
+  const urlCw = pick('url', (x) => x.path + '|' + x.formFactor);
+  const originCw = pick('origin', (x) => x.formFactor);
   const auditM = latestBy(audits, (x) => x.path, (x) => x.runId);
   const cwOf = (x) => (x ? { lcp: x.lcpSeconds, inp: x.inpMs, cls: x.cls } : null);
 
@@ -59,7 +66,7 @@ export async function buildState(db) {
       if (own) o.cwv[k] = own;
       else if (inReg && originCw.get(ff)) o.cwv[k] = { o: 1, ...cwOf(originCw.get(ff)) };
     }
-    const g = gaM.get(path); if (g && g.sessions != null) o.ga = { s: g.sessions, eng: g.engagedSessions, views: g.views, org: g.organicSessions, ...(g.formSubmits != null ? { sub: g.formSubmits } : {}) };
+    const g = gaM.get(path); if (g && g.sessions != null) o.ga = { s: g.sessions, eng: g.engagedSessions, views: g.views, org: g.organicSessions, paid: g.paidSessions, ...(g.formSubmits != null ? { sub: g.formSubmits } : {}) };
     const s = gscM.get(path); if (s && s.clicks != null) o.gsc = { c: s.clicks, i: s.impressions, ps: s.positionSum };
     const hist = (gscAll.get(path) || []).filter((x) => s && +new Date(x.windowEnd) < +new Date(s.windowEnd)).sort((x, y) => +new Date(y.windowEnd) - +new Date(x.windowEnd))[0];
     if (hist) o.gscp = { c: hist.clicks, i: hist.impressions, ps: hist.positionSum };
@@ -81,6 +88,6 @@ export async function buildState(db) {
   return {
     source: 'mongodb', generatedAt: new Date().toISOString(), site: site?.url || cfg.siteUrl, brand: site?.brandTerms || 'tritorc', reg, lastSync,
     counts: { days: Object.keys(daily).length, pages: pages.length, queries: queries.length, issues: outIssues.length },
-    live: { daily, pages: outPages, queries, issues: outIssues, bl: null, mix, ssl: null }
+    live: { daily, pages: outPages, queries, issues: outIssues, bl: null, mix, ssl }
   };
 }
