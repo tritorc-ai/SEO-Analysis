@@ -21,8 +21,9 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
     if (req.method === 'GET' && url.pathname === '/api/health') {
-      const db = await getDb(); await db.command({ ping: 1 });
-      res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, db: cfg.dbName, time: new Date().toISOString() }));
+      // Plain /api/health is a liveness check (what Render polls) and does not touch the database; /api/health?db=1 also pings Atlas.
+      if (url.searchParams.get('db') === '1') { const db = await getDb(); await db.command({ ping: 1 }); }
+      res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, db: cfg.dbName, dbChecked: url.searchParams.get('db') === '1', time: new Date().toISOString() }));
     }
     // When API_TOKEN is set (hosted deployment) every data route needs "Authorization: Bearer <token>". /api/health stays open.
     if (cfg.apiToken && url.pathname.startsWith('/api/') && url.pathname !== '/api/health' && req.headers.authorization !== 'Bearer ' + cfg.apiToken) {
