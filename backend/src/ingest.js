@@ -5,6 +5,9 @@ import { runGa4 } from './jobs/ga4.js';
 import { runGsc } from './jobs/gsc.js';
 import { runPsi } from './jobs/psi.js';
 import { runCrux } from './jobs/crux.js';
+import { runRum } from './jobs/rum.js';
+import { runPaid } from './jobs/paid.js';
+import { runUptime } from './jobs/uptime.js';
 
 // One-off: mark the pages that already have Lighthouse runs as "registry" pages (the ones PageSpeed/CrUX check).
 async function runInit(db) {
@@ -19,9 +22,9 @@ async function runCrawlLog(db) {
   return 'crawler run logged';
 }
 
-const JOBS = { init: runInit, ga4: runGa4, gsc: runGsc, psi: runPsi, crux: runCrux, crawllog: runCrawlLog };
+const JOBS = { init: runInit, ga4: runGa4, gsc: runGsc, psi: runPsi, crux: runCrux, rum: runRum, paid: runPaid, uptime: runUptime, crawllog: runCrawlLog };
 const which = process.argv[2] || 'all';
-const list = which === 'all' ? ['ga4', 'gsc', 'psi', 'crux'] : [which];
+const list = which === 'all' ? ['ga4', 'gsc', 'psi', 'crux', 'rum', 'paid', 'uptime'] : [which];
 if (!list.every((j) => JOBS[j])) { console.log('Unknown job. Use: ' + Object.keys(JOBS).join(' | ') + ' | all'); process.exit(2); }
 
 const db = await getDb();
