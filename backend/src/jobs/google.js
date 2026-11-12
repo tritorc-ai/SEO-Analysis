@@ -7,7 +7,7 @@ async function token() {
   if (!cfg.saFile) throw new Error('GOOGLE_SERVICE_ACCOUNT_FILE is not set in .env (see SETUP_GOOGLE.md)');
   auth ||= new GoogleAuth({
     keyFile: cfg.saFile,
-    scopes: ['https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/webmasters.readonly']
+    scopes: ['https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/webmasters.readonly', 'https://www.googleapis.com/auth/spreadsheets.readonly']
   });
   const c = await auth.getClient();
   const t = await c.getAccessToken();
@@ -16,6 +16,13 @@ async function token() {
 
 export async function gpost(url, body) {
   const r = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + (await token()), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.error) throw new Error(`${r.status} ${d.error?.message || 'request failed'}`);
+  return d;
+}
+
+export async function gget(url) {
+  const r = await fetch(url, { headers: { Authorization: 'Bearer ' + (await token()) } });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || d.error) throw new Error(`${r.status} ${d.error?.message || 'request failed'}`);
   return d;

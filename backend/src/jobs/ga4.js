@@ -50,6 +50,11 @@ export async function runGa4(db) {
   for (const r of await rep({ dateRanges: r28, dimensions: m(['landingPage']), metrics: m(['sessions']), limit: 10000, dimensionFilter: { filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { value: 'Organic Search' } } } })) {
     const p = r.dimensionValues[0].value; if (pageMap[p]) pageMap[p].organicSessions = +r.metricValues[0].value;
   }
+  try {                                                         // paid = any "Paid ..." default channel group (Search, Social, Video, Shopping, Other)
+    for (const r of await rep({ dateRanges: r28, dimensions: m(['landingPage']), metrics: m(['sessions']), limit: 10000, dimensionFilter: { filter: { fieldName: 'sessionDefaultChannelGroup', stringFilter: { matchType: 'BEGINS_WITH', value: 'Paid' } } } })) {
+      const p = r.dimensionValues[0].value; if (pageMap[p]) pageMap[p].paidSessions = +r.metricValues[0].value;
+    }
+  } catch (e) { log('ga4: page paid sessions skipped: ' + e.message); }
   try {
     for (const r of await rep({ dateRanges: r28, dimensions: m(['landingPage']), metrics: m(['eventCount']), limit: 10000, dimensionFilter: evFilter(cfg.events.form) })) {
       const p = r.dimensionValues[0].value; if (pageMap[p]) pageMap[p].formSubmits = +r.metricValues[0].value;
